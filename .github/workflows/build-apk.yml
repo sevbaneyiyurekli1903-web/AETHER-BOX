@@ -1,0 +1,45 @@
+name: Build Native Android APK
+
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repo
+        uses: actions/checkout@v3
+
+      - name: Setup Java JDK
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install Cordova
+        run: npm install -g cordova
+
+      - name: Build Cordova Android App
+        run: |
+          cordova create build_app com.goodcoeur.aetherbox "AetherBox"
+          cd build_app
+          rm -rf www/*
+          cp -r ../* www/ 2>/dev/null || true
+          rm -rf www/build_app www/.github
+          cordova platform add android@12.0.0
+          cordova build android --debug
+
+      - name: Upload APK Artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: AetherBox-Offline-APK
+          path: build_app/platforms/android/app/build/outputs/apk/debug/app-debug.apk
+          
